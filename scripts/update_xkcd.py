@@ -86,13 +86,12 @@ try:
 finally:
     print("Saving")
     with open('./data/xkcd.json', 'w') as f:
-        data_json = '{\n'
+        f.write('{\n')
         keys = list(data.keys())
         for num in keys:
             if num != keys[-1]:
-                data_json += f'"{num}":' + json.dumps(data[num], separators=(',', ':')) + ',\n'
+                f.write(f'"{num}":' + json.dumps(data[num], separators=(',', ':')) + ',\n')
             else:
-                data_json += f'"{num}":' + json.dumps(data[num], separators=(',', ':')) + '\n'
-        data_json += '}\n'
-        f.write(data_json)
+                f.write(f'"{num}":' + json.dumps(data[num], separators=(',', ':')) + '\n')
+        f.write('}\n')
         f.flush()
