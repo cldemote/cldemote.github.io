@@ -61,7 +61,7 @@ def get_xkcd_wiki(i):
             newTranscript += line + '\n'
     else:
         print(f"Comic {i} doesn't have a transcript")
-    return Comic(i, api['title'], characters, api['alt'], api['img'], int(api['year']), int(api['month']), int(api['day']), newTranscript.strip(), sections.get('Explanation', sections['Eggsplanation']), complete)
+    return Comic(i, api['title'], characters, api['alt'], api['img'], int(api['year']), int(api['month']), int(api['day']), newTranscript.strip(), sections.get('Explanation', sections.get('Eggsplanation')), complete)
 
 data = {}
 
