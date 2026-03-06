@@ -7,6 +7,7 @@ import urllib.parse
 @dataclass
 class Comic:
     id: str
+    explainurl: str
     title: str
     characters: list[str]
     alt: str
@@ -19,7 +20,7 @@ class Comic:
     complete: bool
 
     def json(self):
-        return {"title": self.title, "characters": self.characters, "alt": self.alt, "image_url": self.image_url, "year": self.year, "month": self.month, "day": self.day, "transcript": self.transcript, "explanation": self.explanation, "complete": self.complete}
+        return {"id": self.id, "title": self.title, "explainurl": self.explainurl, "characters": self.characters, "alt": self.alt, "image_url": self.image_url, "year": self.year, "month": self.month, "day": self.day, "transcript": self.transcript, "explanation": self.explanation, "complete": self.complete}
 
 def get_xkcd_wiki(i):
     r = requests.get(f'https://xkcd.com/{i}/info.0.json')
@@ -31,7 +32,7 @@ def get_xkcd_wiki(i):
     if r.status_code != 200:
         print(f"Error getting redirect from explainxkcd.com for comic {i}")
         return None
-    explainname = urllib.parse.quote(re.match(r'#REDIRECT ?\[\[(.*)\]\].*', r.json()['parse']['wikitext']['*'], re.IGNORECASE).group(1))
+    explainname = urllib.parse.quote(re.match(r'.*#REDIRECT[ :]*\[\[(.*)\]\].*', r.json()['parse']['wikitext']['*'], re.IGNORECASE).group(1))
     r = requests.get(f'https://www.explainxkcd.com/wiki/api.php?action=parse&page={explainname}&prop=wikitext&sectiontitle=Explanation&format=json')
     if r.status_code != 200:
         print(f"Error getting data from explainxkcd.com for comic {explainname}")
@@ -61,37 +62,34 @@ def get_xkcd_wiki(i):
             newTranscript += line + '\n'
     else:
         print(f"Comic {i} doesn't have a transcript")
-    return Comic(i, api['title'], characters, api['alt'], api['img'], int(api['year']), int(api['month']), int(api['day']), newTranscript.strip(), sections.get('Explanation', sections.get('Eggsplanation')), complete)
+    return Comic(i, f'https://explainxkcd.com/wiki/index.php/{explainname}', api['title'], characters, api['alt'], api['img'], int(api['year']), int(api['month']), int(api['day']), newTranscript.strip(), sections.get('Explanation', sections.get('Eggsplanation')), complete)
 
-data = {}
+done = set()
 
-with open('./data/xkcd.json') as f:
-    data = json.load(f)
+with open('./data/xkcd/all.jsonl') as f:
+    for line in f.read().split('\n'):
+        if line:
+            l = json.loads(line)
+            if l['complete']:
+                done.add(l['id'])
 
 latest_api = requests.get('https://xkcd.com/info.0.json')
 latest_api.raise_for_status()
 
 latest_comic_num = latest_api.json()['num']
 
-done = set([i for i in data if data[i]["complete"]])
 download = [str(i) for i in range(1,latest_comic_num+1)]
 
-try:
-    for num in download:
-        if num in done: continue
-        print(f"Downloading comic {num}")
-        comic = get_xkcd_wiki(num)
-        if comic:
-            data[comic.id] = comic.json()
-finally:
-    print("Saving")
-    with open('./data/xkcd.json', 'w') as f:
-        f.write('{\n')
-        keys = list(data.keys())
-        for num in keys:
-            if num != keys[-1]:
-                f.write(f'"{num}":' + json.dumps(data[num], separators=(',', ':')) + ',\n')
-            else:
-                f.write(f'"{num}":' + json.dumps(data[num], separators=(',', ':')) + '\n')
-        f.write('}\n')
-        f.flush()
+all_f = open('./data/xkcd/all.jsonl', 'a')
+
+for num in download:
+    if num in done: continue
+    print(f"Downloading comic {num}")
+    comic = get_xkcd_wiki(num)
+    if comic:
+        jsonstr = json.dumps(comic.json())
+        with open(f'./data/xkcd/{num}.json', 'w') as f:
+            f.write(jsonstr)
+            f.flush()
+        all_f.write(jsonstr + '\n')
+        all_f.flush()
