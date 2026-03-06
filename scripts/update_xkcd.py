@@ -61,11 +61,11 @@ def get_xkcd_wiki(i):
             newTranscript += line + '\n'
     else:
         print(f"Comic {i} doesn't have a transcript")
-    return Comic(i, api['title'], characters, api['alt'], api['img'], int(api['year']), int(api['month']), int(api['day']), newTranscript.strip(), sections['Explanation'], complete)
+    return Comic(i, api['title'], characters, api['alt'], api['img'], int(api['year']), int(api['month']), int(api['day']), newTranscript.strip(), sections.get('Explanation', sections['Eggsplanation']), complete)
 
 data = {}
 
-with open('./xkcd.json') as f:
+with open('./data/xkcd.json') as f:
     data = json.load(f)
 
 latest_api = requests.get('https://xkcd.com/info.0.json')
@@ -85,7 +85,7 @@ try:
             data[comic.id] = comic.json()
 finally:
     print("Saving")
-    with open('./xkcd.json', 'w') as f:
+    with open('./data/xkcd.json', 'w') as f:
         data_json = '{\n'
         keys = list(data.keys())
         for num in keys:

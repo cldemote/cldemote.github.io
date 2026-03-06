@@ -12,7 +12,9 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Update local data
-        run: python3 scripts/update_xkcd.py
+        run: |
+          pip install requests wikitextparser --break-system-packages
+          python3 scripts/update_xkcd.py
 
       - name: Commit files
         run: |
