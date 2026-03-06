@@ -1,0 +1,26 @@
+name: Update xkcd data
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Update local data
+        run: python3 scripts/update_xkcd.py
+
+      - name: Commit files
+        run: |
+          git config --local user.email "pcmpstri@gmail.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Update data" -a
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
