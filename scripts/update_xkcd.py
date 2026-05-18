@@ -82,10 +82,17 @@ download = [str(i) for i in range(1,latest_comic_num+1)]
 
 all_f = open('./data/xkcd/all.jsonl', 'a')
 
+import traceback
+
 for num in download:
     if num in done: continue
     print(f"Downloading comic {num}")
-    comic = get_xkcd_wiki(num)
+    try:
+        comic = get_xkcd_wiki(num)
+    except Exception as e:
+        comic = None
+        print(f"ERROR ON COMIC {num}")
+        print(traceback.format_exc())
     if comic:
         jsonstr = json.dumps(comic.json())
         with open(f'./data/xkcd/{num}.json', 'w') as f:
