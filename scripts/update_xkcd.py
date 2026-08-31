@@ -1,8 +1,10 @@
+import os
 import requests, json
 from dataclasses import dataclass
 import wikitextparser as wtp
 import re
 import urllib.parse
+import gzip
 
 @dataclass
 class Comic:
@@ -66,13 +68,6 @@ def get_xkcd_wiki(i):
 
 done = set()
 
-with open('./data/xkcd/all.jsonl') as f:
-    for line in f.read().split('\n'):
-        if line:
-            l = json.loads(line)
-            if l['complete']:
-                done.add(l['id'])
-
 latest_api = requests.get('https://xkcd.com/info.0.json')
 latest_api.raise_for_status()
 
@@ -80,7 +75,18 @@ latest_comic_num = latest_api.json()['num']
 
 download = [str(i) for i in range(1,latest_comic_num+1)]
 
-all_f = open('./data/xkcd/all.jsonl', 'a')
+if os.path.exists('./data/xkcd/all.jsonl.gz'):
+    all_f = open('./data/xkcd/all.jsonl.gz', 'rb')
+    all_data = gzip.decompress(all_f.read()).decode('utf-8')
+    all_f.close()
+else:
+    all_data = ''
+
+for line in all_data.split('\n'):
+    if line:
+        l = json.loads(line)
+        if l['complete']:
+            done.add(l['id'])
 
 import traceback
 
@@ -98,5 +104,8 @@ for num in download:
         with open(f'./data/xkcd/{num}.json', 'w') as f:
             f.write(jsonstr)
             f.flush()
-        all_f.write(jsonstr + '\n')
-        all_f.flush()
+        all_data += jsonstr + '\n'
+
+all_f = open('./data/xkcd/all.jsonl.gz', 'wb')
+all_f.write(gzip.compress(all_data.encode('utf-8')))
+all_f.close()
